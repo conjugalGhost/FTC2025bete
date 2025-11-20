@@ -20,6 +20,9 @@ public class TeleOp extends OpMode {
         drive = new Drive(hardwareMap);
         shooter = new Shooter(hardwareMap);
         feeder = new Feeder(hardwareMap);
+
+        // Move feeders to startup positions (right = 4200, left = -4200)
+        feeder.moveToStartupPositions();
     }
 
     @Override

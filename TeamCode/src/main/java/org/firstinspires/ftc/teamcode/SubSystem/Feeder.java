@@ -22,13 +22,30 @@ public class Feeder {
         }
     }
 
-    // Spins outward from center: left forward, right reverse
+    // Move both feeders to startup positions
+    public void moveToStartupPositions() {
+        if (feederLeft != null) {
+            feederLeft.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+            feederLeft.setTargetPosition(-4200);
+            feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            feederLeft.setPower(0.5); // adjust speed as needed
+        }
+
+        if (feederRight != null) {
+            feederRight.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+            feederRight.setTargetPosition(4200);
+            feederRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            feederRight.setPower(0.5); // adjust speed as needed
+        }
+    }
+
+    // Outward from center
     public void feedForward() {
         if (feederLeft != null) feederLeft.setPower(1.0);
         if (feederRight != null) feederRight.setPower(-1.0);
     }
 
-    // Spins inward toward center: left reverse, right forward
+    // Inward toward center
     public void feedReverse() {
         if (feederLeft != null) feederLeft.setPower(-1.0);
         if (feederRight != null) feederRight.setPower(1.0);
@@ -42,14 +59,14 @@ public class Feeder {
     public void updateTelemetry(Telemetry telemetry) {
         telemetry.addLine("=== FEEDER ===");
         if (feederLeft != null) {
-            telemetry.addData("Left Power", feederLeft.getPower());
             telemetry.addData("Left Position", feederLeft.getCurrentPosition());
+            telemetry.addData("Left Power", feederLeft.getPower());
         } else {
             telemetry.addData("Left Motor", "Not Found");
         }
         if (feederRight != null) {
-            telemetry.addData("Right Power", feederRight.getPower());
             telemetry.addData("Right Position", feederRight.getCurrentPosition());
+            telemetry.addData("Right Power", feederRight.getPower());
         } else {
             telemetry.addData("Right Motor", "Not Found");
         }
