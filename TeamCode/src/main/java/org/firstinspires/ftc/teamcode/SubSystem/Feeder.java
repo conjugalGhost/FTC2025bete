@@ -8,9 +8,19 @@ public class Feeder {
     private DcMotorEx feederLeft;
     private DcMotorEx feederRight;
 
+    // Track target positions relative to reset
+    private int leftTarget = 0;
+    private int rightTarget = 0;
+
+    // One step = 180° rotation ≈ 144 ticks
+    private static final int STEP_TICKS = 144;
+
     public Feeder(HardwareMap hardwareMap) {
         try {
             feederLeft = hardwareMap.get(DcMotorEx.class, "feederLeft");
+            if (feederLeft != null) {
+                feederLeft.setDirection(DcMotorEx.Direction.REVERSE);
+            }
         } catch (Exception e) {
             feederLeft = null;
         }
@@ -22,51 +32,67 @@ public class Feeder {
         }
     }
 
-    // Move both feeders to startup positions
-    public void moveToStartupPositions() {
+    // Reset encoders at startup
+    public void resetEncoders() {
         if (feederLeft != null) {
             feederLeft.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-            feederLeft.setTargetPosition(-4200);
-            feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederLeft.setPower(0.5); // adjust speed as needed
+            feederLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         }
-
         if (feederRight != null) {
             feederRight.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-            feederRight.setTargetPosition(4200);
+            feederRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        }
+        leftTarget = 0;
+        rightTarget = 0;
+    }
+
+    // Advance feeders by one step (180°)
+    public void advanceOneStep() {
+        leftTarget -= STEP_TICKS;
+        rightTarget += STEP_TICKS;
+
+        if (feederLeft != null) {
+            feederLeft.setTargetPosition(leftTarget);
+            feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            feederLeft.setPower(0.5);
+        }
+        if (feederRight != null) {
+            feederRight.setTargetPosition(rightTarget);
             feederRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederRight.setPower(0.5); // adjust speed as needed
+            feederRight.setPower(0.5);
         }
     }
 
-    // Outward from center
+    // Continuous forward spin
     public void feedForward() {
         if (feederLeft != null) feederLeft.setPower(1.0);
         if (feederRight != null) feederRight.setPower(-1.0);
     }
 
-    // Inward toward center
+    // Continuous reverse spin
     public void feedReverse() {
         if (feederLeft != null) feederLeft.setPower(-1.0);
         if (feederRight != null) feederRight.setPower(1.0);
     }
 
+    // Stop both motors
     public void stop() {
         if (feederLeft != null) feederLeft.setPower(0.0);
         if (feederRight != null) feederRight.setPower(0.0);
     }
 
+    // Telemetry
     public void updateTelemetry(Telemetry telemetry) {
         telemetry.addLine("=== FEEDER ===");
         if (feederLeft != null) {
-            telemetry.addData("Left Position", feederLeft.getCurrentPosition());
-            telemetry.addData("Left Power", feederLeft.getPower());
+            telemetry.addData("Left Pos (ticks)", feederLeft.getCurrentPosition());
+            telemetry.addData("Left Target", leftTarget);
         } else {
             telemetry.addData("Left Motor", "Not Found");
         }
         if (feederRight != null) {
-            telemetry.addData("Right Position", feederRight.getCurrentPosition());
-            telemetry.addData("Right Power", feederRight.getPower());
+            telemetry.addData("Right Pos (ticks)", feederRight.getCurrentPosition());
+            telemetry.addData("Right Target", rightTarget);
         } else {
             telemetry.addData("Right Motor", "Not Found");
         }

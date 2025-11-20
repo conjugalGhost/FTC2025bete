@@ -21,8 +21,8 @@ public class TeleOp extends OpMode {
         shooter = new Shooter(hardwareMap);
         feeder = new Feeder(hardwareMap);
 
-        // Move feeders to startup positions (right = 4200, left = -4200)
-        feeder.moveToStartupPositions();
+        // Reset feeder encoders at startup
+        feeder.resetEncoders();
     }
 
     @Override
