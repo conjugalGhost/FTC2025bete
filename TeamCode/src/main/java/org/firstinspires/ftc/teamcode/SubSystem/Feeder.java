@@ -27,6 +27,9 @@ public class Feeder {
 
         try {
             feederRight = hardwareMap.get(DcMotorEx.class, "feederRight");
+            if (feederRight != null) {
+                feederRight.setDirection(DcMotorEx.Direction.FORWARD);
+            }
         } catch (Exception e) {
             feederRight = null;
         }
@@ -63,16 +66,16 @@ public class Feeder {
         }
     }
 
-    // Continuous forward spin
+    // Continuous forward spin (both motors same sign)
     public void feedForward() {
         if (feederLeft != null) feederLeft.setPower(1.0);
-        if (feederRight != null) feederRight.setPower(-1.0);
+        if (feederRight != null) feederRight.setPower(1.0);
     }
 
-    // Continuous reverse spin
+    // Continuous reverse spin (both motors same sign)
     public void feedReverse() {
         if (feederLeft != null) feederLeft.setPower(-1.0);
-        if (feederRight != null) feederRight.setPower(1.0);
+        if (feederRight != null) feederRight.setPower(-1.0);
     }
 
     // Stop both motors
