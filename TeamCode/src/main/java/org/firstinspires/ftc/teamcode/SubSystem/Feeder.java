@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -26,7 +27,7 @@ public class Feeder {
         try {
             feederRight = hardwareMap.get(DcMotorEx.class, "feederRight");
             if (feederRight != null) {
-                feederRight.setDirection(DcMotorEx.Direction.FORWARD);
+                feederRight.setDirection(DcMotorEx.Direction.REVERSE);
             }
         } catch (Exception e) {
             feederRight = null;
