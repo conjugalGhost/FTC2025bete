@@ -24,7 +24,7 @@ public class Shooter {
         try {
             rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
             if (rightShooter != null) {
-                // Reverse one motor so both spin inward together
+                // Reverse one motor if mounted opposite
                 rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
                 rightShooter.setVelocityPIDFCoefficients(50.0, 0.0, 0.0, 14.0);
             }
@@ -33,10 +33,9 @@ public class Shooter {
         }
     }
 
-
-    // Spin up shooter to target velocity
+    // Spin up shooter forward
     public void shootForward() {
-        targetVelocity = 2800; // ticks/sec, matches your PIDF tuning
+        targetVelocity = 2800; // ticks/sec
         if (leftShooter != null) leftShooter.setVelocity(targetVelocity);
         if (rightShooter != null) rightShooter.setVelocity(targetVelocity);
     }
@@ -48,8 +47,7 @@ public class Shooter {
         if (rightShooter != null) rightShooter.setPower(0);
     }
 
-    // Check if shooter is at speed
-// Check if shooter is at speed (±30% tolerance)
+    // Check if shooter is at speed (±30% tolerance)
     public boolean isReady() {
         if (targetVelocity == 0) return false;
         double leftVel = getLeftVelocity();
@@ -66,6 +64,6 @@ public class Shooter {
         telemetry.addData("Target Vel", targetVelocity);
         telemetry.addData("Left Vel", getLeftVelocity());
         telemetry.addData("Right Vel", getRightVelocity());
-        telemetry.addData("Ready", isReady());
+        telemetry.addData("Ready (±30%)", isReady());
     }
 }

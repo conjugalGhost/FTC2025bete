@@ -16,10 +16,12 @@ public class AutonBlue extends AutonBase {
         shooter.shootForward();
         sleep(500);
 
-        // Feed 6 game pieces
-        for (int i = 6; i > 0; i--) {
-            feeder.feedForward();
-            sleep(500);
+        // Feed 6 artifacts, one at a time
+        for (int i = 0; i < 6; i++) {
+            if (shooter.isReady()) {
+                feeder.advanceOneStep();
+            }
+            sleep(500);  // allow time for artifact to clear before next feed
         }
 
         // Stop subsystems

@@ -8,12 +8,10 @@ public class Feeder {
     private DcMotorEx feederLeft;
     private DcMotorEx feederRight;
 
-    // Track target positions relative to reset
     private int leftTarget = 0;
     private int rightTarget = 0;
 
-    // One step = 180° rotation ≈ 144 ticks
-    private static final int STEP_TICKS = 144;
+    private static final int STEP_TICKS = 144; // ~180°
 
     public Feeder(HardwareMap hardwareMap) {
         try {
@@ -35,7 +33,6 @@ public class Feeder {
         }
     }
 
-    // Reset encoders at startup
     public void resetEncoders() {
         if (feederLeft != null) {
             feederLeft.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
@@ -49,7 +46,7 @@ public class Feeder {
         rightTarget = 0;
     }
 
-    // Advance feeders by one step (180°)
+    // Step forward (advance 180°)
     public void advanceOneStep() {
         leftTarget -= STEP_TICKS;
         rightTarget += STEP_TICKS;
@@ -66,25 +63,28 @@ public class Feeder {
         }
     }
 
-    // Continuous forward spin (both motors same sign)
-    public void feedForward() {
-        if (feederLeft != null) feederLeft.setPower(1.0);
-        if (feederRight != null) feederRight.setPower(1.0);
+    // Step reverse (back 180°)
+    public void reverseOneStep() {
+        leftTarget += STEP_TICKS;
+        rightTarget -= STEP_TICKS;
+
+        if (feederLeft != null) {
+            feederLeft.setTargetPosition(leftTarget);
+            feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            feederLeft.setPower(0.5);
+        }
+        if (feederRight != null) {
+            feederRight.setTargetPosition(rightTarget);
+            feederRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            feederRight.setPower(0.5);
+        }
     }
 
-    // Continuous reverse spin (both motors same sign)
-    public void feedReverse() {
-        if (feederLeft != null) feederLeft.setPower(-1.0);
-        if (feederRight != null) feederRight.setPower(-1.0);
-    }
-
-    // Stop both motors
     public void stop() {
         if (feederLeft != null) feederLeft.setPower(0.0);
         if (feederRight != null) feederRight.setPower(0.0);
     }
 
-    // Telemetry
     public void updateTelemetry(Telemetry telemetry) {
         telemetry.addLine("=== FEEDER ===");
         if (feederLeft != null) {
