@@ -3,14 +3,10 @@ package org.firstinspires.ftc.teamcode.SubSystem;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class Drive {
     private DcMotorEx frontLeft, frontRight, backLeft, backRight;
-    private BNO055IMU imu;
-    private Orientation angles;
     private double velocityScale = 2000.0;
     private double targetFL, targetFR, targetBL, targetBR;
 
@@ -30,36 +26,21 @@ public class Drive {
         frontRight.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, drivePIDF);
         backLeft.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, drivePIDF);
         backRight.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, drivePIDF);
-
-        try {
-            imu = hardwareMap.get(BNO055IMU.class, "imu");
-            BNO055IMU.Parameters params = new BNO055IMU.Parameters();
-            params.mode = BNO055IMU.SensorMode.IMU;
-            params.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-            imu.initialize(params);
-        } catch (Exception e) {
-            imu = null;
-        }
     }
 
+    /** TeleOp drive with gamepad sticks (robot-centric) */
     public void driveWithGamepad(com.qualcomm.robotcore.hardware.Gamepad gamepad) {
-        double y = -gamepad.left_stick_y;
-        double x = gamepad.left_stick_x;
-        double rx = gamepad.right_stick_x;
+        double y = -gamepad.left_stick_y; // forward/back
+        double x = gamepad.left_stick_x;  // strafe
+        double rx = gamepad.right_stick_x; // rotation
 
-        double heading = 0.0;
-        if (imu != null) {
-            angles = imu.getAngularOrientation();
-            heading = angles.firstAngle;
-        }
-        double correction = heading * 0.05;
+        double fl = y + x + rx;
+        double bl = y - x + rx;
+        double fr = y - x - rx;
+        double br = y + x - rx;
 
-        double fl = y + x + rx + correction;
-        double bl = y - x + rx + correction;
-        double fr = y - x - rx + correction;
-        double br = y + x - rx + correction;
-
-        double max = Math.max(Math.abs(fl), Math.max(Math.abs(bl), Math.max(Math.abs(fr), Math.abs(br))));
+        double max = Math.max(Math.abs(fl), Math.max(Math.abs(bl),
+                Math.max(Math.abs(fr), Math.abs(br))));
         if (max > 1.0) {
             fl /= max; bl /= max; fr /= max; br /= max;
         }
@@ -75,6 +56,7 @@ public class Drive {
         backRight.setVelocity(targetBR);
     }
 
+    /** Simple power set for all motors */
     public void setDrivePower(double power) {
         frontLeft.setPower(power);
         frontRight.setPower(power);
@@ -82,6 +64,7 @@ public class Drive {
         backRight.setPower(power);
     }
 
+    /** Encoder-based forward drive */
     public void driveForwardInches(double inches, double power) {
         int ticks = (int)(inches * TICKS_PER_INCH);
 
@@ -105,32 +88,51 @@ public class Drive {
         backLeft.setPower(power);
         backRight.setPower(power);
 
-        while (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy()) {
+        while (frontLeft.isBusy() && frontRight.isBusy() &&
+                backLeft.isBusy() && backRight.isBusy()) {
             // Optionally add telemetry updates here
         }
 
         setDrivePower(0.0);
     }
 
-    public void gyroTurn(double targetAngle, double power) {
-        double currentAngle = (imu != null) ? imu.getAngularOrientation().firstAngle : 0.0;
+    /** New: field-centric drive using heading from AutonBase */
+    public void driveWithHeading(double forward, double strafe, double headingDeg) {
+        double h = Math.toRadians(headingDeg);
 
-        while (Math.abs(currentAngle - targetAngle) > 2) {
-            if (currentAngle < targetAngle) {
-                frontLeft.setPower(power);
-                backLeft.setPower(power);
-                frontRight.setPower(-power);
-                backRight.setPower(-power);
-            } else {
-                frontLeft.setPower(-power);
-                backLeft.setPower(-power);
-                frontRight.setPower(power);
-                backRight.setPower(power);
-            }
-            currentAngle = (imu != null) ? imu.getAngularOrientation().firstAngle : 0.0;
-        }
+        double rotatedX = strafe * Math.cos(-h) - forward * Math.sin(-h);
+        double rotatedY = strafe * Math.sin(-h) + forward * Math.cos(-h);
 
-        setDrivePower(0.0);
+        double fl = rotatedY + rotatedX;
+        double bl = rotatedY - rotatedX;
+        double fr = rotatedY - rotatedX;
+        double br = rotatedY + rotatedX;
+
+        double max = Math.max(1.0, Math.max(Math.abs(fl),
+                Math.max(Math.abs(bl),
+                        Math.max(Math.abs(fr), Math.abs(br)))));
+
+        frontLeft.setPower(fl / max);
+        backLeft.setPower(bl / max);
+        frontRight.setPower(fr / max);
+        backRight.setPower(br / max);
+    }
+
+    /** New: simple in-place turn */
+    public void turn(double power) {
+        double p = Math.max(-1.0, Math.min(1.0, power));
+        frontLeft.setPower(p);
+        backLeft.setPower(p);
+        frontRight.setPower(-p);
+        backRight.setPower(-p);
+    }
+
+    /** New: stop all motors */
+    public void stop() {
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
     }
 
     public void updateTelemetry(Telemetry telemetry) {

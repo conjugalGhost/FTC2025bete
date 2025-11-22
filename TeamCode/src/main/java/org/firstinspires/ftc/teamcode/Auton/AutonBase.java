@@ -1,88 +1,73 @@
 package org.firstinspires.ftc.teamcode.Auton;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-
 import org.firstinspires.ftc.teamcode.SubSystem.Drive;
+import org.firstinspires.ftc.teamcode.SubSystem.IMU;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 import org.firstinspires.ftc.teamcode.SubSystem.Feeder;
 
 public abstract class AutonBase extends LinearOpMode {
-
     protected Drive drive;
+    protected IMU imu;
     protected Shooter shooter;
     protected Feeder feeder;
-    protected BNO055IMU imu;
-
-    // detail telemetry toggle
     protected boolean detailMode = false;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException {
         // Initialize subsystems
-        drive = new Drive(hardwareMap);
+        drive   = new Drive(hardwareMap);
+        imu     = new IMU(hardwareMap);
         shooter = new Shooter(hardwareMap);
-        feeder = new Feeder(hardwareMap);
+        feeder  = new Feeder(hardwareMap);
 
-        // Initialize IMU
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters params = new BNO055IMU.Parameters();
-        params.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        imu.initialize(params);
+        telemetry.addLine("Autonomous Initialized");
+        telemetry.update();
 
-        // Wait for start
         waitForStart();
 
         if (opModeIsActive()) {
-            // Run the autonomous routine implemented in subclasses
             runAuton();
-
-            // Telemetry loop during autonomous
-            while (opModeIsActive()) {
-                telemetry.addData("Heading (deg)", imu.getAngularOrientation().firstAngle);
-
-                // System Status Summary
-                String driveStatus = "OK";
-                String shooterStatus = (shooter != null) ? "OK" : "Stopped";
-                String feederStatus = (feeder != null) ? "OK" : "Stopped";
-
-                telemetry.addData("System", "Drive=%s Shooter=%s Feeder=%s",
-                        driveStatus, shooterStatus, feederStatus);
-
-                // Optional detail mode
-                if (detailMode) {
-                    logShooterVelocity();
-                }
-
-                telemetry.update();
-            }
         }
-
-        // Stop all subsystems safely
-        drive.setDrivePower(0.0);
-        shooter.stop();
-        feeder.stop();
     }
 
-    // This must be implemented in AutonRed and AutonBlue
+    /** Override this in your auton routines */
     protected abstract void runAuton();
 
-    /** Compact + optional detail shooter telemetry */
+    /** Helper: drive forward a measured distance in inches */
+    protected void driveForwardInches(double inches, double power) {
+        drive.driveForwardInches(inches, power);
+        drive.stop();
+    }
+
+    /** Helper: turn to a specific heading (±2° tolerance) */
+    protected void turnToHeading(double targetHeading) {
+        while (opModeIsActive()) {
+            double currentHeading = imu.getHeading();
+            double error = targetHeading - currentHeading;
+
+            if (Math.abs(error) < 2) break;
+
+            double turnPower = error > 0 ? 0.3 : -0.3;
+            drive.turn(turnPower);
+
+            telemetry.addData("Target", targetHeading);
+            telemetry.addData("Current", currentHeading);
+            telemetry.addData("Error", error);
+            telemetry.update();
+        }
+        drive.stop();
+    }
+
+    /** Optional: reset IMU yaw to zero */
+    protected void resetHeading() {
+        imu.resetYaw();
+    }
+
+    /** Optional helper to log shooter velocity */
     protected void logShooterVelocity() {
-        double D_in = 3.54;                  // REV 90 mm grip wheels
-        double ticksPerRev = 560.0;          // encoder ticks per revolution
-        double leftTicksPerSec = shooter.getLeftVelocity();
-        double rightTicksPerSec = shooter.getRightVelocity();
-        double avgTicksPerSec = (leftTicksPerSec + rightTicksPerSec) / 2.0;
-
-        double rpm = (avgTicksPerSec / ticksPerRev) * 60.0;
-        double circumferenceFt = Math.PI * D_in / 12.0;
-        double vWheelFtPerSec = circumferenceFt * (rpm / 60.0);
-
-        double k = 0.85;                     // slip/compression factor
-        double vExitFtPerSec = k * vWheelFtPerSec;
-
-        telemetry.addData("Shooter (ft/s)", "Wheel=%.2f Exit=%.2f", vWheelFtPerSec, vExitFtPerSec);
-        telemetry.addData("Shooter RPM", "%.0f", rpm);
+        telemetry.addData("Shooter Left Vel", shooter.getLeftVelocity());
+        telemetry.addData("Shooter Right Vel", shooter.getRightVelocity());
+        telemetry.update();
     }
 }

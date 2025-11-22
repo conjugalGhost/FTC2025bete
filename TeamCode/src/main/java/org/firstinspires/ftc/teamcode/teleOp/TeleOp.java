@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.teleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.SubSystem.Feeder;
-import org.firstinspires.ftc.teamcode.SubSystem.IMU;      // <-- corrected import
+import org.firstinspires.ftc.teamcode.SubSystem.IMU;      // updated IMU subsystem
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 import org.firstinspires.ftc.teamcode.SubSystem.Drive;
 
@@ -38,27 +38,26 @@ public class TeleOp extends OpMode {
         // Drive system
         drive.driveWithGamepad(gamepad1);
 
-        // Shooter control on right trigger
+// Shooter control: right trigger = forward, left trigger = reverse
         if (gamepad2.right_trigger > 0.1) {
             shooter.shootForward();
+        } else if (gamepad2.left_trigger > 0.1) {
+            shooter.shootReverse();
         } else {
             shooter.stop();
         }
 
-        // Feeder control: A = step forward, B = step reverse
+
+// Feeder control: A = step forward, B = step reverse
         if (gamepad2.a && !aWasPressed) {
-            if (shooter.isReady()) {
-                feeder.advanceOneStep();
-            }
+            feeder.advanceOneStep();   // forward step
             aWasPressed = true;
         } else if (!gamepad2.a) {
             aWasPressed = false;
         }
 
         if (gamepad2.b && !bWasPressed) {
-            if (shooter.isReady()) {
-                feeder.reverseOneStep();
-            }
+            feeder.reverseOneStep();   // reverse step
             bWasPressed = true;
         } else if (!gamepad2.b) {
             bWasPressed = false;
@@ -82,20 +81,9 @@ public class TeleOp extends OpMode {
 
         // Telemetry output
         if (telemetryEnabled) {
-            telemetry.addData("Heading", "%.1f°", imu.getHeading());
-
-            // Shooter velocity check
-            String shooterStatus = "OK";
-            double targetVel = shooter.getTargetVelocity();
-            double leftVel = shooter.getLeftVelocity();
-            double rightVel = shooter.getRightVelocity();
-            if (targetVel > 0 &&
-                    (Math.abs(leftVel - targetVel) > targetVel * 0.1 ||
-                            Math.abs(rightVel - targetVel) > targetVel * 0.1)) {
-                shooterStatus = "Warning (Velocity Low)";
-            }
-
-            telemetry.addData("System", "Drive=OK Shooter=%s Feeder=OK", shooterStatus);
+            double heading = imu.getHeading();
+            if (heading < 0) heading += 360; // normalize to 0–360
+            telemetry.addData("Heading", "%.1f°", heading);
 
             // Optional detail mode
             if (detailMode) {
@@ -118,5 +106,12 @@ public class TeleOp extends OpMode {
 
             telemetry.update();
         }
+    }
+
+    @Override
+    public void stop() {
+        shooter.stop();
+        drive.setDrivePower(0);
+        feeder.stop();
     }
 }

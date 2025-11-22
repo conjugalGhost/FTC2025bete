@@ -14,7 +14,7 @@ public class Shooter {
         try {
             leftShooter = hardwareMap.get(DcMotorEx.class, "leftShooter");
             if (leftShooter != null) {
-                leftShooter.setDirection(DcMotorEx.Direction.FORWARD);
+                leftShooter.setDirection(DcMotorEx.Direction.REVERSE);
                 leftShooter.setVelocityPIDFCoefficients(50.0, 0.0, 0.0, 14.0);
             }
         } catch (Exception e) {
@@ -24,8 +24,7 @@ public class Shooter {
         try {
             rightShooter = hardwareMap.get(DcMotorEx.class, "rightShooter");
             if (rightShooter != null) {
-                // Reverse one motor if mounted opposite
-                rightShooter.setDirection(DcMotorEx.Direction.REVERSE);
+                rightShooter.setDirection(DcMotorEx.Direction.FORWARD);
                 rightShooter.setVelocityPIDFCoefficients(50.0, 0.0, 0.0, 14.0);
             }
         } catch (Exception e) {
@@ -35,7 +34,14 @@ public class Shooter {
 
     // Spin up shooter forward
     public void shootForward() {
-        targetVelocity = 2800; // ticks/sec
+        targetVelocity = 2200; // feeder lockout, can be tuned up to 2800
+        if (leftShooter != null) leftShooter.setVelocity(targetVelocity);
+        if (rightShooter != null) rightShooter.setVelocity(targetVelocity);
+    }
+
+    // ✅ Spin shooter in reverse
+    public void shootReverse() {
+        targetVelocity = -2200; // same magnitude, negative for reverse
         if (leftShooter != null) leftShooter.setVelocity(targetVelocity);
         if (rightShooter != null) rightShooter.setVelocity(targetVelocity);
     }
@@ -43,17 +49,19 @@ public class Shooter {
     // Stop shooter
     public void stop() {
         targetVelocity = 0;
-        if (leftShooter != null) leftShooter.setPower(0);
-        if (rightShooter != null) rightShooter.setPower(0);
+        if (leftShooter != null) {
+            leftShooter.setVelocity(0);
+            leftShooter.setPower(0);
+        }
+        if (rightShooter != null) {
+            rightShooter.setVelocity(0);
+            rightShooter.setPower(0);
+        }
     }
 
-    // Check if shooter is at speed (±30% tolerance)
+    // Shooter always reports ready (no lock)
     public boolean isReady() {
-        if (targetVelocity == 0) return false;
-        double leftVel = getLeftVelocity();
-        double rightVel = getRightVelocity();
-        return Math.abs(leftVel - targetVelocity) <= targetVelocity * 0.3 &&
-                Math.abs(rightVel - targetVelocity) <= targetVelocity * 0.3;
+        return true;
     }
 
     public double getTargetVelocity() { return targetVelocity; }
@@ -64,6 +72,5 @@ public class Shooter {
         telemetry.addData("Target Vel", targetVelocity);
         telemetry.addData("Left Vel", getLeftVelocity());
         telemetry.addData("Right Vel", getRightVelocity());
-        telemetry.addData("Ready (±30%)", isReady());
     }
 }

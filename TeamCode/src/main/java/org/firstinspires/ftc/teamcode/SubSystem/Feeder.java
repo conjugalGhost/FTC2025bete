@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -17,18 +16,14 @@ public class Feeder {
     public Feeder(HardwareMap hardwareMap) {
         try {
             feederLeft = hardwareMap.get(DcMotorEx.class, "feederLeft");
-            if (feederLeft != null) {
-                feederLeft.setDirection(DcMotorEx.Direction.REVERSE);
-            }
+            feederLeft.setDirection(DcMotorEx.Direction.REVERSE);
         } catch (Exception e) {
             feederLeft = null;
         }
 
         try {
             feederRight = hardwareMap.get(DcMotorEx.class, "feederRight");
-            if (feederRight != null) {
-                feederRight.setDirection(DcMotorEx.Direction.REVERSE);
-            }
+            feederRight.setDirection(DcMotorEx.Direction.REVERSE);
         } catch (Exception e) {
             feederRight = null;
         }
@@ -55,12 +50,12 @@ public class Feeder {
         if (feederLeft != null) {
             feederLeft.setTargetPosition(leftTarget);
             feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederLeft.setPower(0.5);
+            feederLeft.setPower(1.0); // full power
         }
         if (feederRight != null) {
             feederRight.setTargetPosition(rightTarget);
             feederRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederRight.setPower(0.5);
+            feederRight.setPower(1.0); // full power
         }
     }
 
@@ -72,12 +67,12 @@ public class Feeder {
         if (feederLeft != null) {
             feederLeft.setTargetPosition(leftTarget);
             feederLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederLeft.setPower(0.5);
+            feederLeft.setPower(1.0); // full power
         }
         if (feederRight != null) {
             feederRight.setTargetPosition(rightTarget);
             feederRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-            feederRight.setPower(0.5);
+            feederRight.setPower(1.0); // full power
         }
     }
 
